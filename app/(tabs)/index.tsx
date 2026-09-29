@@ -1,3 +1,4 @@
+import { Link } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
 
 export default function HomeScreen() {
@@ -10,7 +11,13 @@ export default function HomeScreen() {
 
         <Text>Painel</Text>
         <Text>Treinamento</Text>
-        <Text>Mapas</Text>
+
+        <Link href="/detalhes">
+          <Text style={styles.mapa}>Mapas</Text>
+        </Link>
+
+
+
         <Text>Desafios</Text>
       </View>
 
@@ -141,6 +148,11 @@ const styles = StyleSheet.create({
   logo: {
     color: '#fc4c02',
     fontSize: 24,
+    fontWeight: 'bold',
+  },
+
+  mapa: {
+    color: '#fc4c02',
     fontWeight: 'bold',
   },
 
