@@ -1,12 +1,59 @@
 import * as Location from 'expo-location';
 import { Link } from 'expo-router';
 import { useState } from 'react';
-import { Button, Linking, StyleSheet, Text, View } from 'react-native';
+import {
+  Button,
+  Linking,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
 
 export default function HomeScreen() {
+  // Estados do CEP
+  const [cep, setCep] = useState('');
+  const [erro, setErro] = useState('');
+  const [endereco, setEndereco] = useState<any>(null);
+  const [carregando, setCarregando] = useState(false);
+
+  // Estados da localização
   const [latitude, setLatitude] = useState<number | null>(null);
   const [longitude, setLongitude] = useState<number | null>(null);
 
+  // Buscar CEP
+  async function buscarCep() {
+    setErro('');
+    setEndereco(null);
+
+    if (cep.length !== 8) {
+      setErro('Digite um CEP com 8 números.');
+      return;
+    }
+
+    setCarregando(true);
+
+    try {
+      const resposta = await fetch(
+        `https://viacep.com.br/ws/${cep}/json/`
+      );
+
+      const dados = await resposta.json();
+
+      if (dados.erro) {
+        setErro('CEP não encontrado.');
+        return;
+      }
+
+      setEndereco(dados);
+    } catch (erro) {
+      setErro('Não foi possível consultar o CEP.');
+    } finally {
+      setCarregando(false);
+    }
+  }
+
+  // Descobrir localização
   async function descobrirLocalizacao() {
     const { status } =
       await Location.requestForegroundPermissionsAsync();
@@ -22,6 +69,7 @@ export default function HomeScreen() {
     setLongitude(location.coords.longitude);
   }
 
+  // Abrir Google Maps
   function abrirMapa() {
     if (latitude !== null && longitude !== null) {
       Linking.openURL(
@@ -33,6 +81,7 @@ export default function HomeScreen() {
   return (
     <View style={styles.container}>
 
+      {/* MENU */}
       <View style={styles.topo}>
         <Text style={styles.logo}>ϟ STRAVA</Text>
 
@@ -46,10 +95,13 @@ export default function HomeScreen() {
         <Text>Desafios</Text>
       </View>
 
+      {/* CONTEÚDO */}
       <View style={styles.conteudo}>
 
+        {/* PERFIL */}
         <View style={styles.perfil}>
           <Text style={styles.foto}>P</Text>
+
           <Text style={styles.nome}>Pedro Gross</Text>
 
           <Text>Seguindo: 1</Text>
@@ -57,8 +109,11 @@ export default function HomeScreen() {
           <Text>Atividades: 6.756</Text>
         </View>
 
+        {/* LOCALIZAÇÃO */}
         <View style={styles.localizacao}>
-          <Text style={styles.titulo}>Minha localização</Text>
+          <Text style={styles.titulo}>
+            Minha localização
+          </Text>
 
           <Button
             title="Descobrir localização"
@@ -81,6 +136,51 @@ export default function HomeScreen() {
               />
             </>
           )}
+
+          {/* BUSCAR CEP */}
+          <Text style={styles.titulo}>
+            Buscar endereço
+          </Text>
+
+          <Text>
+            Digite um CEP para consultar o endereço:
+          </Text>
+
+          <TextInput
+            style={styles.input}
+            placeholder="Ex: 93380000"
+            keyboardType="numeric"
+            value={cep}
+            onChangeText={setCep}
+            maxLength={8}
+          />
+
+          <Button
+            title={carregando ? 'Buscando...' : 'Buscar CEP'}
+            onPress={buscarCep}
+            disabled={carregando}
+          />
+
+          {erro !== '' && (
+            <Text style={styles.error}>
+              {erro}
+            </Text>
+          )}
+
+          {endereco && (
+            <View style={styles.resultadoCep}>
+              <Text style={styles.subtitle}>
+                Endereço encontrado:
+              </Text>
+
+              <Text>CEP: {endereco.cep}</Text>
+              <Text>Rua: {endereco.logradouro}</Text>
+              <Text>Bairro: {endereco.bairro}</Text>
+              <Text>Cidade: {endereco.localidade}</Text>
+              <Text>Estado: {endereco.uf}</Text>
+            </View>
+          )}
+
         </View>
 
       </View>
@@ -145,6 +245,7 @@ const styles = StyleSheet.create({
   localizacao: {
     padding: 20,
     gap: 15,
+    width: 400,
   },
 
   titulo: {
@@ -154,5 +255,31 @@ const styles = StyleSheet.create({
 
   resultado: {
     fontSize: 16,
+  },
+
+  input: {
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 5,
+    padding: 10,
+    fontSize: 16,
+  },
+
+  error: {
+    color: 'red',
+    fontSize: 16,
+  },
+
+  resultadoCep: {
+    padding: 10,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 5,
+    gap: 5,
+  },
+
+  subtitle: {
+    fontSize: 17,
+    fontWeight: 'bold',
   },
 });
